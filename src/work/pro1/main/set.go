@@ -35,7 +35,7 @@ func main() { //@note
 
 	app := fiber.New(fiber.Config{
 		// Prefork: true,
-		AppName:                  "suppersun",
+		AppName:                  "big_money",
 		CaseSensitive:            true,
 		StrictRouting:            true,
 		ServerHeader:             "Fiber",
@@ -66,6 +66,10 @@ func main() { //@note
 	})
 
 	HANDLER.Member(apiV1)
+
+	HANDLER.Card(apiV1)
+
+	HANDLER.Bank(apiV1)
 
 	//log.Print("Server is running on port : " + os.Getenv("PORT"))
 

@@ -2,7 +2,7 @@ package h
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"sunny.ksw.kr/repo/local"
+	"sunny.ksw.kr/repo/member"
 )
 
 func Member(route fiber.Router) {
@@ -15,7 +15,7 @@ func Member(route fiber.Router) {
 
 	memberroute.Post("/insert", func(c *fiber.Ctx) error {
 
-		member := new(local.Member)
+		member := new(member.Member)
 
 		c.BodyParser(member)
 

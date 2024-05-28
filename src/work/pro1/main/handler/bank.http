@@ -1,0 +1,13 @@
+
+
+
+
+###
+
+
+GET http://localhost:8090/api/v1/bank/get  HTTP/1.1
+
+
+###
+
+GET http://localhost:8090/api/v1/bank/get2/665543a55d218627f6672186  HTTP/1.1

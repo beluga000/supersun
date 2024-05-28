@@ -1,4 +1,4 @@
-package local
+package bank
 
 import (
 	"context"
@@ -15,57 +15,44 @@ import (
 	"sunny.ksw.kr/repo"
 )
 
-type Member struct {
-
-	// .
+type Deposit_Detail struct {
 	repo.MongoBase `bson:",inline"`
 
-	Name string `bson:"name"   json:"name"`
-
-	Email string `bson:"email"   json:"email"`
-
-	Phone string `bson:"phone"   json:"phone"`
+	Code                              string   `json:"code" bson:"code"`
+	Product_name                      string   `json:"product_name" bson:"product_name"`
+	Company_code                      string   `json:"company_code" bson:"company_code"`
+	Bank_name                         string   `json:"bank_name" bson:"bank_name"`
+	Product_category                  []string `json:"product_category" bson:"product_category"`
+	Basic_rate                        string   `json:"basic_rate" bson:"basic_rate"`
+	Max_rate                          string   `json:"max_rate" bson:"max_rate"`
+	Product_period                    string   `json:"product_period" bson:"product_period"`
+	SpecialOffer_Summary              string   `json:"specialOffer_Summary" bson:"specialOffer_Summary"`
+	SpecialOffer_Period               string   `json:"specialOffer_Period" bson:"specialOffer_Period"`
+	Join_period                       string   `json:"join_period" bson:"join_period"`
+	Join_amount                       string   `json:"join_amount" bson:"join_amount"`
+	Join_target                       string   `json:"join_target" bson:"join_target"`
+	Join_channel                      string   `json:"join_channel" bson:"join_channel"`
+	Join_payment                      string   `json:"join_payment" bson:"join_payment"`
+	Join_note                         string   `json:"join_note" bson:"join_note"`
+	Join_protection                   string   `json:"join_protection" bson:"join_protection"`
+	Join_deliberationNumber           string   `json:"join_deliberationNumber" bson:"join_deliberationNumber"`
+	Join_deliberationNumber_period    string   `json:"join_deliberationNumber_period" bson:"join_deliberationNumber_period"`
+	Company_tel                       string   `json:"company_tel" bson:"company_tel"`
+	Company_pcLink                    string   `json:"company_pcLink" bson:"company_pcLink"`
+	Company_mobileLink                string   `json:"company_mobileLink" bson:"company_mobileLink"`
+	Rate_kind                         string   `json:"rate_kind" bson:"rate_kind"`
+	RateTable_period                  string   `json:"rateTable_period" bson:"rateTable_period"`
+	SpecialCondition_description      string   `json:"specialCondition_description" bson:"specialCondition_description"`
+	SpecialCondition_description_info []string `json:"specialCondition_description_info" bson:"specialCondition_description_info"`
 }
 
-// .
-
-func MemberCollectionName() string {
-	return "member"
+func Deposit_DetailCollectionName() string {
+	return "deposit_detail"
 }
 
-func (model *Member) CollectionName() string {
+func (model *Deposit_Detail) CollectionName() string {
 	//
-	return MemberCollectionName()
-}
-
-/* ****************************************************************************
-  validate
-
-***************************************************************************** */
-
-// .
-func (model *Member) validate() bool {
-
-	// nomalis = true
-
-	// if len(model.QuestionTitle) < 2 {
-	// 	nomalis = false
-	// 	erris = append(erris, []string{"question_title", "* 제목을 입력해주세요."})
-	// }
-	// if len(model.QuestionContent) < 2 {
-	// 	nomalis = false
-	// 	erris = append(erris, []string{"question_content", "* 문의 내용을 입력해주세요."})
-	// }
-
-	// log.Print(" erris : > ", erris)
-	// // check final
-	// if !nomalis {
-	// 	return nomalis, erris
-	// } else {
-	// 	return true, nil
-
-	// }
-	return true
+	return Deposit_DetailCollectionName()
 }
 
 /* ****************************************************************************
@@ -74,7 +61,7 @@ func (model *Member) validate() bool {
 ***************************************************************************** */
 
 // .
-func (model *Member) GetById(id string) (errEx co.MsgEx) {
+func (model *Deposit_Detail) GetById(id string) (errEx co.MsgEx) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -91,28 +78,10 @@ func (model *Member) GetById(id string) (errEx co.MsgEx) {
 }
 
 // .
-func (model *Member) Create() (errEx co.MsgEx) {
-
-	// nomalis, erris := model.validate()
-
-	// log.Print(" nomalis : ", nomalis)
-	// log.Print(" erris : ", erris)
-
-	// if !nomalis {
-	// 	errEx.Failure = true
-	// 	errEx.Success = false
-	// 	errEx.Message = "입력값이 잘못되었습니다."
-	// 	errEx.ValidateErr = erris
-
-	// 	return errEx
-	// }
+func (model *Deposit_Detail) Create() (errEx co.MsgEx) {
 
 	model.Able = true
 	model.CreatedTime = time.Now()
-
-	if !model.validate() {
-		return errEx
-	}
 
 	_, err := inits.MongoDb.Collection(model.CollectionName()).InsertOne(context.TODO(), model)
 	if err != nil {
@@ -124,7 +93,7 @@ func (model *Member) Create() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Member) Delete() (errEx co.MsgEx) {
+func (model *Deposit_Detail) Delete() (errEx co.MsgEx) {
 
 	model.Able = false
 
@@ -136,7 +105,7 @@ func (model *Member) Delete() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Member) Update() (errEx co.MsgEx) {
+func (model *Deposit_Detail) Update() (errEx co.MsgEx) {
 
 	model.Able = true
 	//update := bson.D{}
@@ -150,18 +119,7 @@ func (model *Member) Update() (errEx co.MsgEx) {
 	return co.SuccessPass("")
 }
 
-// .
-func (model *Member) UpdateWorkStatusId() (errEx co.MsgEx) {
-
-	//update := bson.D{}
-	model.UpdatedTime = time.Now()
-
-	// model.WorkStatusId = "12312"
-
-	return co.SuccessPass("")
-}
-
-func (model *Member) GetList(page string, limit string) (result []*Member, errEx co.MsgEx) {
+func (model *Deposit_Detail) GetList(page string, limit string) (result []*Deposit_Detail, errEx co.MsgEx) {
 	pageInt, _ := strconv.Atoi(page)
 	limitInt, _ := strconv.Atoi(limit)
 
@@ -182,7 +140,7 @@ func (model *Member) GetList(page string, limit string) (result []*Member, errEx
   Find
 ***************************************************************************** */
 // .
-func FindMemberById(id string) (model Member, errMsg co.MsgEx) {
+func FindDeposit_DetailById(id string) (model Deposit_Detail, errMsg co.MsgEx) {
 
 	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
 
@@ -190,29 +148,10 @@ func FindMemberById(id string) (model Member, errMsg co.MsgEx) {
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-	err = inits.MongoDb.Collection(MemberCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
+	err = inits.MongoDb.Collection(Deposit_DetailCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-
-	return model, co.SuccessPass("")
-}
-
-func FindDataRequestByIdPlusCount(id string) (model Member, errMsg co.MsgEx) {
-
-	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
-
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-	err = inits.MongoDb.Collection(MemberCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-
-	// model.ViewCount = model.ViewCount + 1
-	model.Update()
 
 	return model, co.SuccessPass("")
 }
@@ -224,35 +163,31 @@ func FindDataRequestByIdPlusCount(id string) (model Member, errMsg co.MsgEx) {
  * *********************************************************************** */
 
 // .
-type SearchMember struct {
+type SearchDeposit_Detail struct {
 	//
 	comn.Search
 
 	//
 
-	Members []*Member
+	Deposit_Details []*Deposit_Detail
 }
 
-func (search *SearchMember) CollectionName() string {
+func (search *SearchDeposit_Detail) CollectionName() string {
 	//
-	return MemberCollectionName()
+	return Deposit_DetailCollectionName()
 }
 
 // .
-func (search *SearchMember) condition() bson.M {
+func (search *SearchDeposit_Detail) condition() bson.M {
 
 	filter := bson.M{}
-
-	filter["able"] = true
-
-	// cateUrlDecode, _ := url.PathUnescape(search.Cat)
 
 	return filter
 
 }
 
 // .
-func (search *SearchMember) Finds() (errEx co.MsgEx) {
+func (search *SearchDeposit_Detail) Finds() (errEx co.MsgEx) {
 	sort := bson.M{}
 	if co.NotEmptyString(search.SortField) {
 		if search.SortDirection != 1 {
@@ -273,7 +208,7 @@ func (search *SearchMember) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Members); err != nil {
+		if err = cursor.All(context.TODO(), &search.Deposit_Details); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 
@@ -284,7 +219,7 @@ func (search *SearchMember) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Members); err != nil {
+		if err = cursor.All(context.TODO(), &search.Deposit_Details); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 	}

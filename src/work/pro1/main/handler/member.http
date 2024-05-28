@@ -7,7 +7,58 @@ POST http://localhost:8090/api/v1/member/insert  HTTP/1.1
 Content-Type: application/json
 
 {
-    "name": "test",
-    "email": "zz",
-    "phone": "123"
+    "name": "신한카드 B.Big(삑)",
+    "company": "신한카드",
+    "type": "할인・적립",
+    "benefits": [
+        "대중교통",
+        "편의점",
+        "쇼핑",
+        "커피",
+        "통신요금",
+        "공과금"
+    ],
+    "main_benefit": [
+        "대중교통 최대 1만 8천원",
+        "택시 10%",
+        "4대 백화점 5%",
+        "커피 10%"
+    ],
+    "previous_performance": "최소 30만원",
+    "annual_fee": [
+        {
+            "type": "국내용",
+            "fee": "1만원"
+        },
+        {
+            "type": "해외겸용",
+            "fee": "1만 3천원"
+        }
+    ],
+    "max_benefit_per_month": "100 USD",
+    "max_benefit_per_month_detail": [
+        {
+            "amount": "30만원",
+            "benefits":[
+                {
+                    "name": "대중교통",
+                    "amount": "6천원"
+                },
+                {
+                    "type": "택시",
+                    "amount": "1만 8천원"
+                },
+                {
+                    "type": "백화점",
+                    "amount": "1만 8천원"
+                },
+                {
+                    "type": "커피",
+                    "amount": "1만 8천원"
+                }
+            ]
+        },
+        {}
+    ],
+    "image_path":"https://www.google.com"
 }
