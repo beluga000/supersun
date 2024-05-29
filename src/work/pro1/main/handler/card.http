@@ -6,15 +6,23 @@
 ###
 
 
-GET http://127.0.0.1:8090/api/v1/card/get/66548af9805c03bce65b3891  HTTP/1.1
+GET http://localhost:8090/api/v1/card/get/3977  HTTP/1.1
 
 
 
 ###
 
-GET http://127.0.0.1:8090/api/v1/card/list  HTTP/1.1
+GET http://localhost:8090/api/v1/card/list?benefits=간편결제,쇼핑  HTTP/1.1
 
 
 ###
 
-GET http://127.0.0.1:8090/api/v1/card/test  HTTP/1.1
+GET http://localhost:8090/api/v1/card/test  HTTP/1.1
+
+
+
+
+###
+
+
+GET http://localhost:8090/api/v1/card/info/list  HTTP/1.1

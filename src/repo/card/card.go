@@ -17,28 +17,44 @@ import (
 
 type Card struct {
 	repo.MongoBase `bson:",inline"`
-
-	CardAdId               string    `json:"cardAdId" bson:"cardAdId"`
-	CardName               string    `json:"cardName" bson:"cardName"`
-	CompanyCode            string    `json:"companyCode" bson:"companyCode"`
-	TitleDescription       string    `json:"titleDescription" bson:"titleDescription"`
-	CardImage              string    `json:"cardImage" bson:"cardImage"`
-	CardImageUrl           string    `json:"cardImageUrl" bson:"cardImageUrl"`
-	RegisterUrl            string    `json:"registerUrl" bson:"registerUrl"`
-	RegisterUrlForNoCharge string    `json:"registerUrlForNoCharge" bson:"registerUrlForNoCharge"`
-	DomesticAnnualFee      int       `json:"domesticAnnualFee" bson:"domesticAnnualFee"`
-	ForeignAnnualFee       int       `json:"foreignAnnualFee" bson:"foreignAnnualFee"`
-	EnableNpayMO           bool      `json:"enableNpayMO" bson:"enableNpayMO"`
-	EnableNpayPC           bool      `json:"enableNpayPC" bson:"enableNpayPC"`
-	ImpBeacon              string    `json:"impBeacon" bson:"impBeacon"`
-	Benefits               []Benefit `json:"benefits" bson:"benefits"`
-	ReleaseAt              string    `json:"releaseAt" bson:"releaseAt"`
-	BizType                string    `json:"bizType" bson:"bizType"`
-	IsMinCPC               bool      `json:"isMinCPC" bson:"isMinCPC"`
+	// 카드ID
+	CardAdId string `json:"cardAdId" bson:"cardAdId"`
+	// 카드명
+	CardName string `json:"cardName" bson:"cardName"`
+	// 카드사 코드
+	CompanyCode string `json:"companyCode" bson:"companyCode"`
+	// 한줄 광고
+	TitleDescription string `json:"titleDescription" bson:"titleDescription"`
+	// 카드 이미지
+	CardImage string `json:"cardImage" bson:"cardImage"`
+	// 카드 이미지 URL
+	CardImageUrl string `json:"cardImageUrl" bson:"cardImageUrl"`
+	// 카드 신청 URL
+	RegisterUrl string `json:"registerUrl" bson:"registerUrl"`
+	// 카드 신청 URL (무료)
+	RegisterUrlForNoCharge string `json:"registerUrlForNoCharge" bson:"registerUrlForNoCharge"`
+	// 연회비 국내
+	DomesticAnnualFee int `json:"domesticAnnualFee" bson:"domesticAnnualFee"`
+	// 연회비 해외
+	ForeignAnnualFee int `json:"foreignAnnualFee" bson:"foreignAnnualFee"`
+	// 네이버 페이 모바일 여부
+	EnableNpayMO bool `json:"enableNpayMO" bson:"enableNpayMO"`
+	// 네이버 페이 PC 여부
+	EnableNpayPC bool `json:"enableNpayPC" bson:"enableNpayPC"`
+	//
+	ImpBeacon string `json:"impBeacon" bson:"impBeacon"`
+	// 혜택
+	Benefits []Benefit `json:"benefits" bson:"benefits"`
+	// 카드 출시일
+	ReleaseAt string `json:"releaseAt" bson:"releaseAt"`
+	BizType   string `json:"bizType" bson:"bizType"`
+	IsMinCPC  bool   `json:"isMinCPC" bson:"isMinCPC"`
 }
 
 type Benefit struct {
-	Order                     int    `json:"order" bson:"order"`
+	// 순서
+	Order int `json:"order" bson:"order"`
+	// 혜택명
 	RootBenefitCategoryIdName string `json:"rootBenefitCategoryIdName" bson:"rootBenefitCategoryIdName"`
 	IconFileName              string `json:"iconFileName" bson:"iconFileName"`
 	IconFileNameUrl           string `json:"iconFileNameUrl" bson:"iconFileNameUrl"`
@@ -154,21 +170,14 @@ func FindCardById(id string) (model Card, errMsg co.MsgEx) {
 	return model, co.SuccessPass("")
 }
 
-func FindDataRequestByIdPlusCount(id string) (model Card, errMsg co.MsgEx) {
+func FindCardByCardID(card_id string) (model Card, errMsg co.MsgEx) {
 
 	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
 
-	objectId, err := primitive.ObjectIDFromHex(id)
+	err := inits.MongoDb.Collection(CardCollectionName()).FindOne(context.TODO(), bson.M{"cardAdId": card_id}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-	err = inits.MongoDb.Collection(CardCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-
-	// model.ViewCount = model.ViewCount + 1
-	model.Update()
 
 	return model, co.SuccessPass("")
 }
@@ -180,11 +189,14 @@ func FindDataRequestByIdPlusCount(id string) (model Card, errMsg co.MsgEx) {
  * *********************************************************************** */
 
 // .
+
 type SearchCard struct {
 	//
 	comn.Search
 
-	//
+	Code string `json:"code" `
+
+	Benefits []string `json:"benefits" `
 
 	Cards []*Card
 }
@@ -193,55 +205,37 @@ func (search *SearchCard) CollectionName() string {
 	//
 	return CardCollectionName()
 }
+func (search *SearchCard) condition() []bson.M {
+	matchStage := bson.M{
+		"$match": bson.M{},
+	}
 
-// .
-func (search *SearchCard) condition() bson.M {
+	if co.NotEmptyString(search.Code) {
+		matchStage["$match"].(bson.M)["companyCode"] = search.Code
+	}
 
-	filter := bson.M{}
+	matchStage["$match"].(bson.M)["benefits.rootBenefitCategoryIdName"] = bson.M{"$all": search.Benefits}
 
-	return filter
-
+	return []bson.M{matchStage}
 }
 
 // .
 func (search *SearchCard) Finds() (errEx co.MsgEx) {
-	sort := bson.M{}
-	if co.NotEmptyString(search.SortField) {
-		if search.SortDirection != 1 {
-			search.SortDirection = -1
-		} else {
-			search.SortDirection = 1
-		}
-		sort[search.SortField] = search.SortDirection
-	} else {
-		sort["createdtime"] = -1
+	pipeline := search.condition()
+
+	cursor, err := inits.MongoDb.Collection(search.CollectionName()).Aggregate(
+		context.TODO(),
+		pipeline,
+	)
+	if err != nil {
+		return co.ErrorPass(err.Error())
 	}
 
-	if search.Limit > 0 && search.PageOffset > -1 {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(),
-			options.Find().SetSkip(int64(search.Limit)*int64(search.PageOffset)).SetLimit(int64(search.Limit)).SetSort(sort))
-		if err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-		if err = cursor.All(context.TODO(), &search.Cards); err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-	} else {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(), options.Find().SetSort(sort))
-		if err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-		if err = cursor.All(context.TODO(), &search.Cards); err != nil {
-			return co.ErrorPass(err.Error())
-		}
+	if err = cursor.All(context.TODO(), &search.Cards); err != nil {
+		return co.ErrorPass(err.Error())
 	}
 
-	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), search.condition())
+	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), search.condition()[0]["$match"].(bson.M))
 	if err != nil {
 		return co.ErrorPass(err.Error())
 	}
@@ -249,5 +243,4 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 	search.Total = total
 
 	return errEx
-
 }
