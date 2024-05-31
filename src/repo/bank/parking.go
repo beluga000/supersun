@@ -16,7 +16,7 @@ import (
 	"sunny.ksw.kr/repo"
 )
 
-type Deposit struct {
+type Parking struct {
 	repo.MongoBase `bson:",inline"`
 
 	TypeCode          string   `json:"typeCode" bson:"typeCode"`
@@ -26,21 +26,18 @@ type Deposit struct {
 	CompanyName       string   `json:"companyName" bson:"companyName"`
 	CompanyLogoURL    string   `json:"companyLogoURL" bson:"companyLogoURL"`
 	IsBrokerage       bool     `json:"isBrokerage" bson:"isBrokerage"`
-	CUName            string   `json:"cuName" bson:"cuName"`
 	InterestRate      float64  `json:"interestRate" bson:"interestRate"`
 	PrimeInterestRate float64  `json:"primeInterestRate" bson:"primeInterestRate"`
-	CMAInterestRate   string   `json:"cmaInterestRate,omitempty" bson:"cmaInterestRate,omitempty"`
-	Features          []string `json:"features" bson:"features"`
 	ProductCategories []string `json:"productCategories" bson:"productCategories"`
 }
 
-func DepositCollectionName() string {
-	return "deposit"
+func ParkingCollectionName() string {
+	return "parking"
 }
 
-func (model *Deposit) CollectionName() string {
+func (model *Parking) CollectionName() string {
 	//
-	return DepositCollectionName()
+	return ParkingCollectionName()
 }
 
 /* ****************************************************************************
@@ -49,7 +46,7 @@ func (model *Deposit) CollectionName() string {
 ***************************************************************************** */
 
 // .
-func (model *Deposit) GetById(id string) (errEx co.MsgEx) {
+func (model *Parking) GetById(id string) (errEx co.MsgEx) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -66,7 +63,7 @@ func (model *Deposit) GetById(id string) (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Create() (errEx co.MsgEx) {
+func (model *Parking) Create() (errEx co.MsgEx) {
 
 	model.Able = true
 	model.CreatedTime = time.Now()
@@ -81,7 +78,7 @@ func (model *Deposit) Create() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Delete() (errEx co.MsgEx) {
+func (model *Parking) Delete() (errEx co.MsgEx) {
 
 	model.Able = false
 
@@ -93,7 +90,7 @@ func (model *Deposit) Delete() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Update() (errEx co.MsgEx) {
+func (model *Parking) Update() (errEx co.MsgEx) {
 
 	model.Able = true
 	//update := bson.D{}
@@ -107,7 +104,7 @@ func (model *Deposit) Update() (errEx co.MsgEx) {
 	return co.SuccessPass("")
 }
 
-func (model *Deposit) GetList(page string, limit string) (result []*Deposit, errEx co.MsgEx) {
+func (model *Parking) GetList(page string, limit string) (result []*Parking, errEx co.MsgEx) {
 	pageInt, _ := strconv.Atoi(page)
 	limitInt, _ := strconv.Atoi(limit)
 
@@ -128,7 +125,7 @@ func (model *Deposit) GetList(page string, limit string) (result []*Deposit, err
   Find
 ***************************************************************************** */
 // .
-func FindDepositById(id string) (model Deposit, errMsg co.MsgEx) {
+func FindParkingById(id string) (model Parking, errMsg co.MsgEx) {
 
 	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
 
@@ -136,29 +133,10 @@ func FindDepositById(id string) (model Deposit, errMsg co.MsgEx) {
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-	err = inits.MongoDb.Collection(DepositCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
+	err = inits.MongoDb.Collection(ParkingCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-
-	return model, co.SuccessPass("")
-}
-
-func FindDataRequestByIdPlusCount(id string) (model Deposit, errMsg co.MsgEx) {
-
-	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
-
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-	err = inits.MongoDb.Collection(DepositCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-
-	// model.ViewCount = model.ViewCount + 1
-	model.Update()
 
 	return model, co.SuccessPass("")
 }
@@ -170,22 +148,22 @@ func FindDataRequestByIdPlusCount(id string) (model Deposit, errMsg co.MsgEx) {
  * *********************************************************************** */
 
 // .
-type SearchDeposit struct {
+type SearchParking struct {
 	//
 	comn.Search
 
 	//
 
-	Deposits []*Deposit
+	Parkings []*Parking
 }
 
-func (search *SearchDeposit) CollectionName() string {
+func (search *SearchParking) CollectionName() string {
 	//
-	return DepositCollectionName()
+	return ParkingCollectionName()
 }
 
 // .
-func (search *SearchDeposit) condition() bson.M {
+func (search *SearchParking) condition() bson.M {
 
 	filter := bson.M{}
 
@@ -194,7 +172,7 @@ func (search *SearchDeposit) condition() bson.M {
 }
 
 // .
-func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
+func (search *SearchParking) Finds() (errEx co.MsgEx) {
 	sort := bson.M{}
 	if co.NotEmptyString(search.SortField) {
 		if search.SortDirection != 1 {
@@ -215,7 +193,7 @@ func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Deposits); err != nil {
+		if err = cursor.All(context.TODO(), &search.Parkings); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 
@@ -226,7 +204,7 @@ func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Deposits); err != nil {
+		if err = cursor.All(context.TODO(), &search.Parkings); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 	}

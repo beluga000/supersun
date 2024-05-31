@@ -6,13 +6,13 @@
 ###
 
 
-GET http://localhost:8090/api/v1/card/get/3977  HTTP/1.1
+GET http://localhost:8090/api/v1/card/get/10071  HTTP/1.1
 
 
 
 ###
 
-GET http://localhost:8090/api/v1/card/list?benefits=간편결제,쇼핑  HTTP/1.1
+GET http://localhost:8090/api/v1/card/list?limit=10&page=1&maxAnnualFee=5000  HTTP/1.1
 
 
 ###

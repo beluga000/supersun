@@ -71,8 +71,6 @@ func main() { //@note
 
 	HANDLER.Bank(apiV1)
 
-	//log.Print("Server is running on port : " + os.Getenv("PORT"))
-
 	app.Listen(":8090") // 변경된 부분
 
 }

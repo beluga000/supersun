@@ -9,14 +9,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
 	"sunny.ksw.kr/co"
 	"sunny.ksw.kr/comn"
 	"sunny.ksw.kr/inits"
 	"sunny.ksw.kr/repo"
 )
 
-type Deposit struct {
+type Cma struct {
 	repo.MongoBase `bson:",inline"`
 
 	TypeCode          string   `json:"typeCode" bson:"typeCode"`
@@ -24,23 +23,22 @@ type Deposit struct {
 	Name              string   `json:"name" bson:"name"`
 	CompanyCode       string   `json:"companyCode" bson:"companyCode"`
 	CompanyName       string   `json:"companyName" bson:"companyName"`
-	CompanyLogoURL    string   `json:"companyLogoURL" bson:"companyLogoURL"`
 	IsBrokerage       bool     `json:"isBrokerage" bson:"isBrokerage"`
-	CUName            string   `json:"cuName" bson:"cuName"`
+	CuName            string   `json:"cuName" bson:"cuName"`
 	InterestRate      float64  `json:"interestRate" bson:"interestRate"`
 	PrimeInterestRate float64  `json:"primeInterestRate" bson:"primeInterestRate"`
-	CMAInterestRate   string   `json:"cmaInterestRate,omitempty" bson:"cmaInterestRate,omitempty"`
+	CmaInterestRate   string   `json:"cmaInterestRate" bson:"cmaInterestRate"`
 	Features          []string `json:"features" bson:"features"`
 	ProductCategories []string `json:"productCategories" bson:"productCategories"`
 }
 
-func DepositCollectionName() string {
-	return "deposit"
+func CmaCollectionName() string {
+	return "cma"
 }
 
-func (model *Deposit) CollectionName() string {
+func (model *Cma) CollectionName() string {
 	//
-	return DepositCollectionName()
+	return CmaCollectionName()
 }
 
 /* ****************************************************************************
@@ -49,7 +47,7 @@ func (model *Deposit) CollectionName() string {
 ***************************************************************************** */
 
 // .
-func (model *Deposit) GetById(id string) (errEx co.MsgEx) {
+func (model *Cma) GetById(id string) (errEx co.MsgEx) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -66,7 +64,7 @@ func (model *Deposit) GetById(id string) (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Create() (errEx co.MsgEx) {
+func (model *Cma) Create() (errEx co.MsgEx) {
 
 	model.Able = true
 	model.CreatedTime = time.Now()
@@ -81,7 +79,7 @@ func (model *Deposit) Create() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Delete() (errEx co.MsgEx) {
+func (model *Cma) Delete() (errEx co.MsgEx) {
 
 	model.Able = false
 
@@ -93,7 +91,7 @@ func (model *Deposit) Delete() (errEx co.MsgEx) {
 }
 
 // .
-func (model *Deposit) Update() (errEx co.MsgEx) {
+func (model *Cma) Update() (errEx co.MsgEx) {
 
 	model.Able = true
 	//update := bson.D{}
@@ -107,7 +105,7 @@ func (model *Deposit) Update() (errEx co.MsgEx) {
 	return co.SuccessPass("")
 }
 
-func (model *Deposit) GetList(page string, limit string) (result []*Deposit, errEx co.MsgEx) {
+func (model *Cma) GetList(page string, limit string) (result []*Cma, errEx co.MsgEx) {
 	pageInt, _ := strconv.Atoi(page)
 	limitInt, _ := strconv.Atoi(limit)
 
@@ -128,7 +126,7 @@ func (model *Deposit) GetList(page string, limit string) (result []*Deposit, err
   Find
 ***************************************************************************** */
 // .
-func FindDepositById(id string) (model Deposit, errMsg co.MsgEx) {
+func FindCmaById(id string) (model Cma, errMsg co.MsgEx) {
 
 	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
 
@@ -136,29 +134,10 @@ func FindDepositById(id string) (model Deposit, errMsg co.MsgEx) {
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-	err = inits.MongoDb.Collection(DepositCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
+	err = inits.MongoDb.Collection(CmaCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}
-
-	return model, co.SuccessPass("")
-}
-
-func FindDataRequestByIdPlusCount(id string) (model Deposit, errMsg co.MsgEx) {
-
-	//err = mgm.Coll(&L01201{}).FindByID(id, &model)
-
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-	err = inits.MongoDb.Collection(DepositCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
-	if err != nil {
-		return model, co.ErrorPass(err.Error())
-	}
-
-	// model.ViewCount = model.ViewCount + 1
-	model.Update()
 
 	return model, co.SuccessPass("")
 }
@@ -170,22 +149,22 @@ func FindDataRequestByIdPlusCount(id string) (model Deposit, errMsg co.MsgEx) {
  * *********************************************************************** */
 
 // .
-type SearchDeposit struct {
+type SearchCma struct {
 	//
 	comn.Search
 
 	//
 
-	Deposits []*Deposit
+	Cmas []*Cma
 }
 
-func (search *SearchDeposit) CollectionName() string {
+func (search *SearchCma) CollectionName() string {
 	//
-	return DepositCollectionName()
+	return CmaCollectionName()
 }
 
 // .
-func (search *SearchDeposit) condition() bson.M {
+func (search *SearchCma) condition() bson.M {
 
 	filter := bson.M{}
 
@@ -194,7 +173,7 @@ func (search *SearchDeposit) condition() bson.M {
 }
 
 // .
-func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
+func (search *SearchCma) Finds() (errEx co.MsgEx) {
 	sort := bson.M{}
 	if co.NotEmptyString(search.SortField) {
 		if search.SortDirection != 1 {
@@ -215,7 +194,7 @@ func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Deposits); err != nil {
+		if err = cursor.All(context.TODO(), &search.Cmas); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 
@@ -226,7 +205,7 @@ func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
 			return co.ErrorPass(err.Error())
 		}
 
-		if err = cursor.All(context.TODO(), &search.Deposits); err != nil {
+		if err = cursor.All(context.TODO(), &search.Cmas); err != nil {
 			return co.ErrorPass(err.Error())
 		}
 	}

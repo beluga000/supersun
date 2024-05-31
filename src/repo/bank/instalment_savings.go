@@ -19,18 +19,16 @@ import (
 type Instalment_Savings struct {
 	repo.MongoBase `bson:",inline"`
 
-	TypeCode          string   `json:"typeCode"`
-	Code              string   `json:"code"`
-	Name              string   `json:"name"`
-	CompanyCode       string   `json:"companyCode"`
-	CompanyName       string   `json:"companyName"`
-	IsBrokerage       bool     `json:"isBrokerage"`
-	CUName            string   `json:"cuName"`
-	InterestRate      string   `json:"interestRate"`
-	PrimeInterestRate string   `json:"primeInterestRate"`
-	CMAInterestRate   *string  `json:"cmaInterestRate,omitempty"`
-	Features          []string `json:"features"`
-	ProductCategories []string `json:"productCategories"`
+	TypeCode          string   `json:"typeCode" bson:"typeCode"`
+	Code              string   `json:"code" bson:"code"`
+	Name              string   `json:"name" bson:"name"`
+	CompanyCode       string   `json:"companyCode" bson:"companyCode"`
+	CompanyName       string   `json:"companyName" bson:"companyName"`
+	CompanyLogoURL    string   `json:"companyLogoURL" bson:"companyLogoURL"`
+	IsBrokerage       bool     `json:"isBrokerage" bson:"isBrokerage"`
+	InterestRate      float64  `json:"interestRate" bson:"interestRate"`
+	PrimeInterestRate float64  `json:"primeInterestRate" bson:"primeInterestRate"`
+	ProductCategories []string `json:"productCategories" bson:"productCategories"`
 }
 
 func Instalment_SavingsCollectionName() string {
@@ -156,7 +154,7 @@ type SearchInstalment_Savings struct {
 
 	//
 
-	Instalment_Savingss []*Instalment_Savings
+	Instalment_Savingss []*Instalment_Savings `json:"Instalment_Savingss"`
 }
 
 func (search *SearchInstalment_Savings) CollectionName() string {
@@ -175,22 +173,11 @@ func (search *SearchInstalment_Savings) condition() bson.M {
 
 // .
 func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
-	sort := bson.M{}
-	if co.NotEmptyString(search.SortField) {
-		if search.SortDirection != 1 {
-			search.SortDirection = -1
-		} else {
-			search.SortDirection = 1
-		}
-		sort[search.SortField] = search.SortDirection
-	} else {
-		sort["createdtime"] = -1
-	}
 
 	if search.Limit > 0 && search.PageOffset > -1 {
 
 		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(),
-			options.Find().SetSkip(int64(search.Limit)*int64(search.PageOffset)).SetLimit(int64(search.Limit)).SetSort(sort))
+			options.Find().SetSkip(int64(search.Limit)*int64(search.PageOffset)).SetLimit(int64(search.Limit)))
 		if err != nil {
 			return co.ErrorPass(err.Error())
 		}
@@ -201,7 +188,7 @@ func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
 
 	} else {
 
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(), options.Find().SetSort(sort))
+		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(), options.Find())
 		if err != nil {
 			return co.ErrorPass(err.Error())
 		}

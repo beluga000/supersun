@@ -1,10 +1,12 @@
 package h
 
 import (
+	"log"
 	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"sunny.ksw.kr/repo/bank"
 	"sunny.ksw.kr/repo/card"
 )
 
@@ -23,17 +25,43 @@ func Card(route fiber.Router) {
 
 		code := c.Query("code", "")
 		benefits := c.Query("benefits", "")
+		maxAnnualFee, _ := strconv.Atoi(c.Query("maxAnnualFee", "0"))
 
 		search := card.SearchCard{}
 		search.Limit = limit
 		search.Page = page
 		search.PageOffset = page - 1
 		search.Code = code
+		search.MaxAnnualFee = maxAnnualFee
 		if benefits != "" {
 			search.Benefits = strings.Split(benefits, ",")
 		}
-
+		log.Print("search : ", search)
 		search.Finds()
+
+		for _, v := range search.Cards {
+
+			switch v.CompanyCode {
+			case "SS":
+				v.CompanyName = "삼성카드"
+			case "KB":
+				v.CompanyName = "국민카드"
+			case "SH":
+				v.CompanyName = "신한카드"
+			case "HD":
+				v.CompanyName = "현대카드"
+			case "LO":
+				v.CompanyName = "롯데카드"
+			case "SK":
+				v.CompanyName = "하나카드"
+			case "WR":
+				v.CompanyName = "우리카드"
+			case "NH":
+				v.CompanyName = "농협카드"
+			case "IB":
+				v.CompanyName = "기업카드"
+			}
+		}
 
 		return c.JSON(search)
 	})
@@ -69,25 +97,25 @@ func Card(route fiber.Router) {
 		return c.JSON(search)
 	})
 
-	// cardroute.Get("/test", func(c *fiber.Ctx) error {
+	cardroute.Get("/test", func(c *fiber.Ctx) error {
 
-	// 	search := card.SearchCard{}
+		search := bank.SearchParking{}
 
-	// 	search.Finds()
+		search.Finds()
 
-	// 	companyCode_arr := []string{}
-	// 	companyCode_map := make(map[string]bool)
+		companyCode_arr := []string{}
+		companyCode_map := make(map[string]bool)
 
-	// 	for _, v := range search.Cards {
-	// 		if _, exists := companyCode_map[v.CompanyCode]; !exists {
-	// 			companyCode_arr = append(companyCode_arr, v.CompanyCode)
-	// 			companyCode_map[v.CompanyCode] = true
-	// 		}
-	// 	}
+		for _, v := range search.Parkings {
+			if _, exists := companyCode_map[v.Code]; !exists {
+				companyCode_arr = append(companyCode_arr, v.Code)
+				companyCode_map[v.Code] = true
+			}
+		}
 
-	// 	return c.JSON(companyCode_arr)
+		return c.JSON(companyCode_arr)
 
-	// })
+	})
 
 	// cardroute.Get("/get/:id", func(c *fiber.Ctx) error {
 

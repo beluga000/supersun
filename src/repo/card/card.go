@@ -23,6 +23,8 @@ type Card struct {
 	CardName string `json:"cardName" bson:"cardName"`
 	// 카드사 코드
 	CompanyCode string `json:"companyCode" bson:"companyCode"`
+	// 카드사 이름
+	CompanyName string `json:"companyName" bson:"companyName"`
 	// 한줄 광고
 	TitleDescription string `json:"titleDescription" bson:"titleDescription"`
 	// 카드 이미지
@@ -122,7 +124,7 @@ func (model *Card) Delete() (errEx co.MsgEx) {
 func (model *Card) Update() (errEx co.MsgEx) {
 
 	model.Able = true
-	//update := bson.D{}
+
 	model.UpdatedTime = time.Now()
 
 	_, err := inits.MongoDb.Collection(model.CollectionName()).UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: model.ID}}, bson.M{"$set": model})
@@ -196,9 +198,11 @@ type SearchCard struct {
 
 	Code string `json:"code" `
 
+	MaxAnnualFee int `json:"maxAnnualFee" `
+
 	Benefits []string `json:"benefits" `
 
-	Cards []*Card
+	Cards []*Card `json:"cards" `
 }
 
 func (search *SearchCard) CollectionName() string {
@@ -214,7 +218,13 @@ func (search *SearchCard) condition() []bson.M {
 		matchStage["$match"].(bson.M)["companyCode"] = search.Code
 	}
 
-	matchStage["$match"].(bson.M)["benefits.rootBenefitCategoryIdName"] = bson.M{"$all": search.Benefits}
+	if len(search.Benefits) > 0 {
+		matchStage["$match"].(bson.M)["benefits.rootBenefitCategoryIdName"] = bson.M{"$all": search.Benefits}
+	}
+
+	if search.MaxAnnualFee > 0 {
+		matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
+	}
 
 	return []bson.M{matchStage}
 }
@@ -222,6 +232,26 @@ func (search *SearchCard) condition() []bson.M {
 // .
 func (search *SearchCard) Finds() (errEx co.MsgEx) {
 	pipeline := search.condition()
+
+	// Define sort criteria
+	sort := bson.M{"createdtime": -1} // Default sort by createdtime in descending order
+	if co.NotEmptyString(search.SortField) {
+		if search.SortDirection != 1 {
+			search.SortDirection = -1
+		} else {
+			search.SortDirection = 1
+		}
+		sort = bson.M{search.SortField: search.SortDirection}
+	}
+
+	// Add sort stage to pipeline
+	pipeline = append(pipeline, bson.M{"$sort": sort})
+
+	// Add skip and limit stages for pagination
+	if search.Limit > 0 && search.PageOffset > -1 {
+		pipeline = append(pipeline, bson.M{"$skip": int64(search.Limit) * int64(search.PageOffset)})
+		pipeline = append(pipeline, bson.M{"$limit": int64(search.Limit)})
+	}
 
 	cursor, err := inits.MongoDb.Collection(search.CollectionName()).Aggregate(
 		context.TODO(),
@@ -235,7 +265,7 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 		return co.ErrorPass(err.Error())
 	}
 
-	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), search.condition()[0]["$match"].(bson.M))
+	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), pipeline[0]["$match"].(bson.M))
 	if err != nil {
 		return co.ErrorPass(err.Error())
 	}
