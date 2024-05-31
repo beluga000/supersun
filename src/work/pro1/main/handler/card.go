@@ -61,6 +61,8 @@ func Card(route fiber.Router) {
 				v.CompanyName = "농협카드"
 			case "IB":
 				v.CompanyName = "기업카드"
+			case "BC":
+				v.CompanyName = "비씨카드"
 			}
 		}
 

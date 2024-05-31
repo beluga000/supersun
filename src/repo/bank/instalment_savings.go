@@ -152,6 +152,10 @@ type SearchInstalment_Savings struct {
 	//
 	comn.Search
 
+	CompanyName string `json:"companyName" `
+
+	Category []string `json:"category" `
+
 	//
 
 	Instalment_Savingss []*Instalment_Savings `json:"Instalment_Savingss"`
@@ -163,42 +167,54 @@ func (search *SearchInstalment_Savings) CollectionName() string {
 }
 
 // .
-func (search *SearchInstalment_Savings) condition() bson.M {
+func (search *SearchInstalment_Savings) condition() []bson.M {
 
-	filter := bson.M{}
+	matchStage := bson.M{
+		"$match": bson.M{}}
 
-	return filter
+	if co.NotEmptyString(search.CompanyName) {
+		matchStage["$match"].(bson.M)["companyName"] = search.CompanyName
+	}
+
+	return []bson.M{matchStage}
 
 }
 
 // .
 func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
+	pipeline := search.condition()
 
-	if search.Limit > 0 && search.PageOffset > -1 {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(),
-			options.Find().SetSkip(int64(search.Limit)*int64(search.PageOffset)).SetLimit(int64(search.Limit)))
-		if err != nil {
-			return co.ErrorPass(err.Error())
+	sort := bson.M{"createdtime": -1}
+	if co.NotEmptyString(search.SortField) {
+		if search.SortDirection != 1 {
+			search.SortDirection = -1
+		} else {
+			search.SortDirection = 1
 		}
-
-		if err = cursor.All(context.TODO(), &search.Instalment_Savingss); err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-	} else {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(), options.Find())
-		if err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-		if err = cursor.All(context.TODO(), &search.Instalment_Savingss); err != nil {
-			return co.ErrorPass(err.Error())
-		}
+		sort = bson.M{search.SortField: search.SortDirection}
 	}
 
-	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), search.condition())
+	pipeline = append(pipeline, bson.M{"$sort": sort})
+
+	if search.Limit > 0 && search.PageOffset > -1 {
+		pipeline = append(pipeline, bson.M{"$skip": int64(search.Limit) * int64(search.PageOffset)})
+		pipeline = append(pipeline, bson.M{"$limit": int64(search.Limit)})
+	}
+
+	cursor, err := inits.MongoDb.Collection(search.CollectionName()).Aggregate(
+		context.TODO(),
+		pipeline,
+	)
+	if err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	if err = cursor.All(context.TODO(), &search.Instalment_Savingss); err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	// 전체 데이터 갯수
+	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), pipeline[0]["$match"].(bson.M))
 	if err != nil {
 		return co.ErrorPass(err.Error())
 	}
@@ -206,5 +222,4 @@ func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
 	search.Total = total
 
 	return errEx
-
 }

@@ -12,7 +12,7 @@ GET http://localhost:8090/api/v1/card/get/10071  HTTP/1.1
 
 ###
 
-GET http://localhost:8090/api/v1/card/list?limit=10&page=1&basement=0  HTTP/1.1
+GET http://localhost:8090/api/v1/card/list?code=SH  HTTP/1.1
 
 
 ###

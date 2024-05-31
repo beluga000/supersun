@@ -229,14 +229,16 @@ func (search *SearchCard) condition() []bson.M {
 	}
 
 	// 연회비 검색조건
-	if search.MaxAnnualFee > 0 {
+	if search.MaxAnnualFee != 0 {
 		matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
 	}
 
+	// if search.MaxAnnualFee > 0 {
+	// 	matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
+	// }
+
 	// 전월실적 검색조건
-	if search.Basement == 0 {
-		matchStage["$match"].(bson.M)["basement"] = search.Basement
-	} else if search.Basement > 0 {
+	if search.Basement != 0 {
 		matchStage["$match"].(bson.M)["basement"] = bson.M{"$lte": search.Basement}
 	}
 
