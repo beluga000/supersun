@@ -1,7 +1,6 @@
 package h
 
 import (
-	"log"
 	"strconv"
 	"strings"
 
@@ -26,6 +25,7 @@ func Card(route fiber.Router) {
 		code := c.Query("code", "")
 		benefits := c.Query("benefits", "")
 		maxAnnualFee, _ := strconv.Atoi(c.Query("maxAnnualFee", "0"))
+		basement, _ := strconv.Atoi(c.Query("basement", "0"))
 
 		search := card.SearchCard{}
 		search.Limit = limit
@@ -36,7 +36,8 @@ func Card(route fiber.Router) {
 		if benefits != "" {
 			search.Benefits = strings.Split(benefits, ",")
 		}
-		log.Print("search : ", search)
+		search.Basement = basement
+
 		search.Finds()
 
 		for _, v := range search.Cards {
@@ -114,6 +115,26 @@ func Card(route fiber.Router) {
 		}
 
 		return c.JSON(companyCode_arr)
+
+	})
+
+	cardroute.Get("/test/max", func(c *fiber.Ctx) error {
+
+		search := card.SearchCard{}
+
+		search.Finds()
+
+		maxAnnualFee := 0
+
+		for _, v := range search.Cards {
+
+			if v.DomesticAnnualFee > maxAnnualFee {
+				maxAnnualFee = v.DomesticAnnualFee
+			}
+
+		}
+
+		return c.JSON(maxAnnualFee)
 
 	})
 

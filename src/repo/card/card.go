@@ -49,8 +49,10 @@ type Card struct {
 	Benefits []Benefit `json:"benefits" bson:"benefits"`
 	// 카드 출시일
 	ReleaseAt string `json:"releaseAt" bson:"releaseAt"`
-	BizType   string `json:"bizType" bson:"bizType"`
-	IsMinCPC  bool   `json:"isMinCPC" bson:"isMinCPC"`
+	// 전월실적
+	Basement int    `json:"basement" bson:"basement"`
+	BizType  string `json:"bizType" bson:"bizType"`
+	IsMinCPC bool   `json:"isMinCPC" bson:"isMinCPC"`
 }
 
 type Benefit struct {
@@ -202,6 +204,8 @@ type SearchCard struct {
 
 	Benefits []string `json:"benefits" `
 
+	Basement int `json:"basement" `
+
 	Cards []*Card `json:"cards" `
 }
 
@@ -214,16 +218,26 @@ func (search *SearchCard) condition() []bson.M {
 		"$match": bson.M{},
 	}
 
+	// 카드사 검색조건
 	if co.NotEmptyString(search.Code) {
 		matchStage["$match"].(bson.M)["companyCode"] = search.Code
 	}
 
+	// 카드 혜택 검색조건
 	if len(search.Benefits) > 0 {
 		matchStage["$match"].(bson.M)["benefits.rootBenefitCategoryIdName"] = bson.M{"$all": search.Benefits}
 	}
 
+	// 연회비 검색조건
 	if search.MaxAnnualFee > 0 {
 		matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
+	}
+
+	// 전월실적 검색조건
+	if search.Basement == 0 {
+		matchStage["$match"].(bson.M)["basement"] = search.Basement
+	} else if search.Basement > 0 {
+		matchStage["$match"].(bson.M)["basement"] = bson.M{"$lte": search.Basement}
 	}
 
 	return []bson.M{matchStage}
@@ -233,8 +247,7 @@ func (search *SearchCard) condition() []bson.M {
 func (search *SearchCard) Finds() (errEx co.MsgEx) {
 	pipeline := search.condition()
 
-	// Define sort criteria
-	sort := bson.M{"createdtime": -1} // Default sort by createdtime in descending order
+	sort := bson.M{"createdtime": -1}
 	if co.NotEmptyString(search.SortField) {
 		if search.SortDirection != 1 {
 			search.SortDirection = -1
@@ -244,10 +257,8 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 		sort = bson.M{search.SortField: search.SortDirection}
 	}
 
-	// Add sort stage to pipeline
 	pipeline = append(pipeline, bson.M{"$sort": sort})
 
-	// Add skip and limit stages for pagination
 	if search.Limit > 0 && search.PageOffset > -1 {
 		pipeline = append(pipeline, bson.M{"$skip": int64(search.Limit) * int64(search.PageOffset)})
 		pipeline = append(pipeline, bson.M{"$limit": int64(search.Limit)})
@@ -265,6 +276,7 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 		return co.ErrorPass(err.Error())
 	}
 
+	// 전체 데이터 갯수
 	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), pipeline[0]["$match"].(bson.M))
 	if err != nil {
 		return co.ErrorPass(err.Error())

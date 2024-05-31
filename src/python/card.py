@@ -35,19 +35,16 @@ for cardAdId in numbers_with_quotes:
     soup = BeautifulSoup(data.text, 'html.parser')
     card_name = soup.select_one('#app > div > div.BaseInfo > div > div.cardname > b')
     card_name_text = card_name.text if card_name else "Unknown"
-    title_list = soup.select('#app > div > div.BaseInfo_benefits > div > div > button > span')
-    arr_title = [title.text for title in title_list]
-    content_list = soup.select('#app > div.cardItem > div.Benefits > div > details > summary > h5 > i')
-    arr_content = [content.text for content in content_list]
-    benefits = [{'title': t, 'content': c} for t, c in zip(arr_title, arr_content)]
+    basement = soup.select_one("#app > div > div.BaseInfo > div > div.cardinfo > dl > dd.desc.as_baseRecord")
     card_info = {
         'cardAdId': cardAdId,  
         'cardName': card_name_text,
-        'benefit': benefits
+        'basement': basement.text if basement else "Unknown"
+
     }
     client = MongoClient('mongodb://localhost:27017/')
     db = client['local']  # Replace with your database name
-    collection = db['card_info']  # Replace with your collection name
+    collection = db['card_testt']  # Replace with your collection name
     collection.insert_one(card_info)
     print("Data inserted into MongoDB successfully")
 
