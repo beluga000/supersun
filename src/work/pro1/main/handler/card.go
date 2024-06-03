@@ -17,7 +17,6 @@ func Card(route fiber.Router) {
 	// 	return c.SendString("member")
 	// })
 
-	// 카드 리스트 조회
 	cardroute.Get("/list", func(c *fiber.Ctx) error {
 		limit, _ := strconv.Atoi(c.Query("limit", "10"))
 		page, _ := strconv.Atoi(c.Query("page", "0"))
@@ -26,6 +25,8 @@ func Card(route fiber.Router) {
 		benefits := c.Query("benefits", "")
 		maxAnnualFee, _ := strconv.Atoi(c.Query("maxAnnualFee", "0"))
 		basement, _ := strconv.Atoi(c.Query("basement", "0"))
+		annualFeeSort := c.Query("annualFeeSort", "")
+		basementSort := c.Query("basementSort", "")
 
 		search := card.SearchCard{}
 		search.Limit = limit
@@ -37,7 +38,8 @@ func Card(route fiber.Router) {
 			search.Benefits = strings.Split(benefits, ",")
 		}
 		search.Basement = basement
-
+		search.AnnualFeeSort = annualFeeSort
+		search.BasementSort = basementSort
 		search.Finds()
 
 		for _, v := range search.Cards {

@@ -193,20 +193,23 @@ func FindCardByCardID(card_id string) (model Card, errMsg co.MsgEx) {
  * *********************************************************************** */
 
 // .
-
 type SearchCard struct {
 	//
 	comn.Search
 
-	Code string `json:"code" `
+	Code string `json:"code"`
 
-	MaxAnnualFee int `json:"maxAnnualFee" `
+	MaxAnnualFee int `json:"maxAnnualFee"`
 
-	Benefits []string `json:"benefits" `
+	Benefits []string `json:"benefits"`
 
-	Basement int `json:"basement" `
+	Basement int `json:"basement"`
 
-	Cards []*Card `json:"cards" `
+	Cards []*Card `json:"cards"`
+
+	AnnualFeeSort string `json:"annualFeeSort"`
+
+	BasementSort string `json:"basementSort"`
 }
 
 func (search *SearchCard) CollectionName() string {
@@ -233,10 +236,6 @@ func (search *SearchCard) condition() []bson.M {
 		matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
 	}
 
-	// if search.MaxAnnualFee > 0 {
-	// 	matchStage["$match"].(bson.M)["domesticAnnualFee"] = bson.M{"$lte": search.MaxAnnualFee}
-	// }
-
 	// 전월실적 검색조건
 	if search.Basement != 0 {
 		matchStage["$match"].(bson.M)["basement"] = bson.M{"$lte": search.Basement}
@@ -250,13 +249,27 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 	pipeline := search.condition()
 
 	sort := bson.M{"createdtime": -1}
-	if co.NotEmptyString(search.SortField) {
-		if search.SortDirection != 1 {
-			search.SortDirection = -1
-		} else {
-			search.SortDirection = 1
-		}
-		sort = bson.M{search.SortField: search.SortDirection}
+	// if co.NotEmptyString(search.SortField) {
+	// 	if search.SortDirection != 1 {
+	// 		search.SortDirection = -1
+	// 	} else {
+	// 		search.SortDirection = 1
+	// 	}
+	// 	sort = bson.M{search.SortField: search.SortDirection}
+	// }
+
+	// 연회비 정렬 추가
+	if search.AnnualFeeSort == "asc" {
+		sort = bson.M{"domesticAnnualFee": 1}
+	} else if search.AnnualFeeSort == "desc" {
+		sort = bson.M{"domesticAnnualFee": -1}
+	}
+
+	// 전월실적 정렬 추가
+	if search.BasementSort == "asc" {
+		sort = bson.M{"basement": 1}
+	} else if search.BasementSort == "desc" {
+		sort = bson.M{"basement": -1}
 	}
 
 	pipeline = append(pipeline, bson.M{"$sort": sort})
