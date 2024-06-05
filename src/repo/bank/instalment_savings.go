@@ -16,6 +16,7 @@ import (
 	"sunny.ksw.kr/repo"
 )
 
+// 예금
 type Instalment_Savings struct {
 	repo.MongoBase `bson:",inline"`
 
@@ -134,6 +135,16 @@ func FindInstalment_SavingsById(id string) (model Instalment_Savings, errMsg co.
 		return model, co.ErrorPass(err.Error())
 	}
 	err = inits.MongoDb.Collection(Instalment_SavingsCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
+	if err != nil {
+		return model, co.ErrorPass(err.Error())
+	}
+
+	return model, co.SuccessPass("")
+}
+
+func FindInstalment_SavingsByCode(code string) (model Instalment_Savings, errMsg co.MsgEx) {
+
+	err := inits.MongoDb.Collection(Instalment_SavingsCollectionName()).FindOne(context.TODO(), bson.M{"code": code}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}

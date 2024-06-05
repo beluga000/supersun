@@ -21,3 +21,16 @@ GET http://localhost:8090/api/v1/bank/instalment/list  HTTP/1.1
 ###
 
 GET http://localhost:8090/api/v1/bank/cma/test  HTTP/1.1
+
+
+###
+
+
+GET http://localhost:8090/api/v1/bank/instalment/list?companyname=DGB대구은행  HTTP/1.1
+
+
+
+####
+
+
+GET http://127.0.0.1:8090/api/v1/bank/instalment/get/d1f2badd0918fcf04d2f06e048699b0f  HTTP/1.1
