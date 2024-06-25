@@ -44,6 +44,8 @@ type Deposit_Detail struct {
 	RateTable_period                  string   `json:"rateTable_period" bson:"rateTable_period"`
 	SpecialCondition_description      string   `json:"specialCondition_description" bson:"specialCondition_description"`
 	SpecialCondition_description_info []string `json:"specialCondition_description_info" bson:"specialCondition_description_info"`
+	Amount_min                        string   `json:"amount_min" bson:"amount_min"`
+	Amount_max                        string   `json:"amount_max" bson:"amount_max"`
 }
 
 func Deposit_DetailCollectionName() string {
@@ -149,6 +151,16 @@ func FindDeposit_DetailById(id string) (model Deposit_Detail, errMsg co.MsgEx) {
 		return model, co.ErrorPass(err.Error())
 	}
 	err = inits.MongoDb.Collection(Deposit_DetailCollectionName()).FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&model)
+	if err != nil {
+		return model, co.ErrorPass(err.Error())
+	}
+
+	return model, co.SuccessPass("")
+}
+
+func FindDeposit_DetailByCode(code string) (model Deposit_Detail, errMsg co.MsgEx) {
+
+	err := inits.MongoDb.Collection(Deposit_DetailCollectionName()).FindOne(context.TODO(), bson.M{"code": code}).Decode(&model)
 	if err != nil {
 		return model, co.ErrorPass(err.Error())
 	}

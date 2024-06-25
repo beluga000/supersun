@@ -53,6 +53,8 @@ type Card struct {
 	Basement int    `json:"basement" bson:"basement"`
 	BizType  string `json:"bizType" bson:"bizType"`
 	IsMinCPC bool   `json:"isMinCPC" bson:"isMinCPC"`
+
+	Max_discount []Max_discount `json:"max_discount" bson:"max_discount"`
 }
 
 type Benefit struct {
@@ -62,6 +64,11 @@ type Benefit struct {
 	RootBenefitCategoryIdName string `json:"rootBenefitCategoryIdName" bson:"rootBenefitCategoryIdName"`
 	IconFileName              string `json:"iconFileName" bson:"iconFileName"`
 	IconFileNameUrl           string `json:"iconFileNameUrl" bson:"iconFileNameUrl"`
+}
+
+type Max_discount struct {
+	Amount string `json:"amount" bson:"amount"`
+	Price  string `json:"price" bson:"price"`
 }
 
 func CardCollectionName() string {

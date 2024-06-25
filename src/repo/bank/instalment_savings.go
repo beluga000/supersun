@@ -25,11 +25,12 @@ type Instalment_Savings struct {
 	Name              string   `json:"name" bson:"name"`
 	CompanyCode       string   `json:"companyCode" bson:"companyCode"`
 	CompanyName       string   `json:"companyName" bson:"companyName"`
-	CompanyLogoURL    string   `json:"companyLogoURL" bson:"companyLogoURL"`
 	IsBrokerage       bool     `json:"isBrokerage" bson:"isBrokerage"`
 	InterestRate      float64  `json:"interestRate" bson:"interestRate"`
 	PrimeInterestRate float64  `json:"primeInterestRate" bson:"primeInterestRate"`
 	ProductCategories []string `json:"productCategories" bson:"productCategories"`
+	CompanyLogoURL    string   `json:"companyLogoURL" bson:"companyLogoURL"`
+	Product_period    int      `json:"product_period" bson:"product_period"`
 }
 
 func Instalment_SavingsCollectionName() string {
