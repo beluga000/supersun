@@ -154,6 +154,17 @@ func FindDepositByCode(code string) (model Deposit, errMsg co.MsgEx) {
 	return model, co.SuccessPass("")
 }
 
+func FindDepositByPeriod(period int) (models []Deposit, errMsg co.MsgEx) {
+
+	cursor, err := inits.MongoDb.Collection(DepositCollectionName()).Find(context.TODO(), bson.M{"product_period": bson.M{"$lte": period}})
+	if err != nil {
+		return nil, co.ErrorPass(err.Error())
+	} else {
+		cursor.All(context.TODO(), &models)
+	}
+	return models, co.SuccessPass("")
+}
+
 // .
 
 /* ***********************************************************************
@@ -228,7 +239,6 @@ func (search *SearchDeposit) Finds() (errEx co.MsgEx) {
 		sort = bson.M{"interestRate": -1}
 	}
 
-	// 전월실적 정렬 추가
 	if search.Max_Rate_Sort == "asc" {
 		sort = bson.M{"primeInterestRate": 1}
 	} else if search.Max_Rate_Sort == "desc" {

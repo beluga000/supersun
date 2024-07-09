@@ -18,14 +18,17 @@ import (
 type Deposit_Detail struct {
 	repo.MongoBase `bson:",inline"`
 
-	Code                              string   `json:"code" bson:"code"`
-	Product_name                      string   `json:"product_name" bson:"product_name"`
-	Company_code                      string   `json:"company_code" bson:"company_code"`
-	Bank_name                         string   `json:"bank_name" bson:"bank_name"`
-	Product_category                  []string `json:"product_category" bson:"product_category"`
-	Basic_rate                        string   `json:"basic_rate" bson:"basic_rate"`
-	Max_rate                          string   `json:"max_rate" bson:"max_rate"`
-	Product_period                    string   `json:"product_period" bson:"product_period"`
+	Code             string   `json:"code" bson:"code"`
+	Product_name     string   `json:"product_name" bson:"product_name"`
+	Company_code     string   `json:"company_code" bson:"company_code"`
+	Bank_name        string   `json:"bank_name" bson:"bank_name"`
+	Product_category []string `json:"product_category" bson:"product_category"`
+	// 기본이율
+	Basic_rate float64 `json:"basic_rate" bson:"basic_rate"`
+	// 최고이율
+	Max_rate float64 `json:"max_rate" bson:"max_rate"`
+	// 최대 가입기간
+	Product_period                    int      `json:"product_period" bson:"product_period"`
 	SpecialOffer_Summary              string   `json:"specialOffer_Summary" bson:"specialOffer_Summary"`
 	SpecialOffer_Period               string   `json:"specialOffer_Period" bson:"specialOffer_Period"`
 	Join_period                       string   `json:"join_period" bson:"join_period"`
@@ -44,8 +47,24 @@ type Deposit_Detail struct {
 	RateTable_period                  string   `json:"rateTable_period" bson:"rateTable_period"`
 	SpecialCondition_description      string   `json:"specialCondition_description" bson:"specialCondition_description"`
 	SpecialCondition_description_info []string `json:"specialCondition_description_info" bson:"specialCondition_description_info"`
-	Amount_min                        string   `json:"amount_min" bson:"amount_min"`
-	Amount_max                        string   `json:"amount_max" bson:"amount_max"`
+	// 월 최대납입 금액
+	Amount_min int `json:"amount_min" bson:"amount_min"`
+	// 월 최소납입 금액
+	Amount_max int `json:"amount_max" bson:"amount_max"`
+	// 누구나 가입 가능조건
+	Is_everyone bool `json:"is_everyone" bson:"is_everyone"`
+	// 청년전용
+	Is_young bool `json:"is_young" bson:"is_young"`
+	// 사업자전용
+	Is_business bool `json:"is_business" bson:"is_business"`
+	// 자녀전용
+	Is_children bool `json:"is_children" bson:"is_children"`
+	// 취약계층전용
+	Is_vulnerable_social_group bool `json:"is_vulnerable_social_group" bson:"is_vulnerable_social_group"`
+	// 군인전용
+	Is_soldier bool `json:"is_soldier" bson:"is_soldier"`
+	// 노인전용
+	Is_old bool `json:"is_old" bson:"is_old"`
 }
 
 func Deposit_DetailCollectionName() string {
@@ -181,6 +200,26 @@ type SearchDeposit_Detail struct {
 
 	//
 
+	Bank_name string `json:"bank_name" bson:"bank_name"`
+
+	Period string `json:"period" bson:"period"`
+
+	// Youth string `json:"youth" bson:"youth"`
+
+	Max_Rate_Sort string `json:"max_rate_sort"`
+
+	Business string `json:"business" bson:"business"`
+
+	Children string `json:"children" bson:"children"`
+
+	Vulnerable_social_group string `json:"vulnerable_social_group" bson:"vulnerable_social_group"`
+
+	Young string `json:"young" bson:"young"`
+
+	Soldier string `json:"soldier" bson:"soldier"`
+
+	Old string `json:"old" bson:"old"`
+
 	Deposit_Details []*Deposit_Detail
 }
 
@@ -188,55 +227,90 @@ func (search *SearchDeposit_Detail) CollectionName() string {
 	//
 	return Deposit_DetailCollectionName()
 }
+func addMatchCondition(matchStage bson.M, field string, value string) {
+	if value == "N" {
+		matchStage[field] = false
+	} else if value == "Y" {
+		if _, ok := matchStage["$or"]; !ok {
+			matchStage["$or"] = []bson.M{}
+		}
+		matchStage["$or"] = append(matchStage["$or"].([]bson.M), bson.M{field: true}, bson.M{field: false}, bson.M{field: bson.M{"$exists": false}})
+	}
+}
 
 // .
-func (search *SearchDeposit_Detail) condition() bson.M {
+func (search *SearchDeposit_Detail) condition() []bson.M {
+	matchStage := bson.M{"$match": bson.M{}}
 
-	filter := bson.M{}
+	if co.NotEmptyString(search.Bank_name) {
+		matchStage["$match"].(bson.M)["bank_name"] = search.Bank_name
+	}
 
-	return filter
+	if co.NotEmptyString(search.Period) && search.Period != "전체" {
+		period, _ := strconv.Atoi(search.Period)
+		matchStage["$match"].(bson.M)["product_period"] = bson.M{"$lte": period}
+	}
 
+	if co.NotEmptyString(search.Children) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_children", search.Children)
+	}
+
+	if co.NotEmptyString(search.Business) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_business", search.Business)
+	}
+
+	if co.NotEmptyString(search.Vulnerable_social_group) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_vulnerable_social_group", search.Vulnerable_social_group)
+	}
+
+	if co.NotEmptyString(search.Young) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_young", search.Young)
+	}
+
+	if co.NotEmptyString(search.Soldier) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_soldier", search.Soldier)
+	}
+
+	if co.NotEmptyString(search.Old) {
+		addMatchCondition(matchStage["$match"].(bson.M), "is_old", search.Old)
+	}
+
+	return []bson.M{matchStage}
 }
 
 // .
 func (search *SearchDeposit_Detail) Finds() (errEx co.MsgEx) {
-	sort := bson.M{}
-	if co.NotEmptyString(search.SortField) {
-		if search.SortDirection != 1 {
-			search.SortDirection = -1
-		} else {
-			search.SortDirection = 1
-		}
-		sort[search.SortField] = search.SortDirection
-	} else {
-		sort["createdtime"] = -1
+
+	pipeline := search.condition()
+
+	sort := bson.M{"createdtime": -1}
+	if search.Max_Rate_Sort == "asc" {
+		sort = bson.M{"max_rate": 1}
+	} else if search.Max_Rate_Sort == "desc" {
+		sort = bson.M{"max_rate": -1}
 	}
+
+	pipeline = append(pipeline, bson.M{"$sort": sort})
 
 	if search.Limit > 0 && search.PageOffset > -1 {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(),
-			options.Find().SetSkip(int64(search.Limit)*int64(search.PageOffset)).SetLimit(int64(search.Limit)).SetSort(sort))
-		if err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-		if err = cursor.All(context.TODO(), &search.Deposit_Details); err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-	} else {
-
-		cursor, err := inits.MongoDb.Collection(search.CollectionName()).Find(context.TODO(), search.condition(), options.Find().SetSort(sort))
-		if err != nil {
-			return co.ErrorPass(err.Error())
-		}
-
-		if err = cursor.All(context.TODO(), &search.Deposit_Details); err != nil {
-			return co.ErrorPass(err.Error())
-		}
+		pipeline = append(pipeline, bson.M{"$skip": int64(search.Limit) * int64(search.PageOffset)})
+		pipeline = append(pipeline, bson.M{"$limit": int64(search.Limit)})
 	}
 
-	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), search.condition())
+	cursor, err := inits.MongoDb.Collection(search.CollectionName()).Aggregate(
+		context.TODO(),
+		pipeline,
+	)
+	if err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	if err = cursor.All(context.TODO(), &search.Deposit_Details); err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	// 전체 데이터 갯수
+	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), pipeline[0]["$match"].(bson.M))
 	if err != nil {
 		return co.ErrorPass(err.Error())
 	}

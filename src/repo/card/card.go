@@ -256,14 +256,6 @@ func (search *SearchCard) Finds() (errEx co.MsgEx) {
 	pipeline := search.condition()
 
 	sort := bson.M{"createdtime": -1}
-	// if co.NotEmptyString(search.SortField) {
-	// 	if search.SortDirection != 1 {
-	// 		search.SortDirection = -1
-	// 	} else {
-	// 		search.SortDirection = 1
-	// 	}
-	// 	sort = bson.M{search.SortField: search.SortDirection}
-	// }
 
 	// 연회비 정렬 추가
 	if search.AnnualFeeSort == "asc" {

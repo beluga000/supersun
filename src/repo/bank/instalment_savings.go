@@ -164,9 +164,15 @@ type SearchInstalment_Savings struct {
 	//
 	comn.Search
 
-	CompanyName string `json:"companyName" `
+	Bank_Name string `json:"bank_name"`
 
-	Category []string `json:"category" `
+	Period string `json:"period"`
+
+	Categories []string `json:"categories" `
+
+	Basic_Rate_Sort string `json:"basic_rate_sort"`
+
+	Max_Rate_Sort string `json:"max_rate_sort"`
 
 	//
 
@@ -184,8 +190,17 @@ func (search *SearchInstalment_Savings) condition() []bson.M {
 	matchStage := bson.M{
 		"$match": bson.M{}}
 
-	if co.NotEmptyString(search.CompanyName) {
-		matchStage["$match"].(bson.M)["companyName"] = search.CompanyName
+	if co.NotEmptyString(search.Bank_Name) {
+		matchStage["$match"].(bson.M)["companyName"] = search.Bank_Name
+	}
+
+	if co.NotEmptyString(search.Period) && search.Period != "전체" {
+		period, _ := strconv.Atoi(search.Period)
+		matchStage["$match"].(bson.M)["product_period"] = bson.M{"$lte": period}
+	}
+
+	if len(search.Categories) > 0 {
+		matchStage["$match"].(bson.M)["productCategories"] = bson.M{"$all": search.Categories}
 	}
 
 	return []bson.M{matchStage}
@@ -197,13 +212,17 @@ func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
 	pipeline := search.condition()
 
 	sort := bson.M{"createdtime": -1}
-	if co.NotEmptyString(search.SortField) {
-		if search.SortDirection != 1 {
-			search.SortDirection = -1
-		} else {
-			search.SortDirection = 1
-		}
-		sort = bson.M{search.SortField: search.SortDirection}
+
+	if search.Basic_Rate_Sort == "asc" {
+		sort = bson.M{"interestRate": 1}
+	} else if search.Basic_Rate_Sort == "desc" {
+		sort = bson.M{"interestRate": -1}
+	}
+
+	if search.Max_Rate_Sort == "asc" {
+		sort = bson.M{"primeInterestRate": 1}
+	} else if search.Max_Rate_Sort == "desc" {
+		sort = bson.M{"primeInterestRate": -1}
 	}
 
 	pipeline = append(pipeline, bson.M{"$sort": sort})
