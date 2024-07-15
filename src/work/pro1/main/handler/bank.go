@@ -241,6 +241,15 @@ func Bank(route fiber.Router) {
 
 			test := 0
 
+			// 총 납입 원금
+			total_Sum := 0
+			// 총 세전이자
+			total_Interest := 0
+			// 총 세금
+			total_Tax := 0
+			// 총 만기금액
+			total_FinalAmount := 0
+
 			for _, v := range search.Deposit_Details {
 				// 해당 적금 상품 월 최대 납입금액
 				monthlyAmount := v.Amount_max
@@ -265,6 +274,15 @@ func Bank(route fiber.Router) {
 
 				deposit, _ := bank.FindDepositByCode(v.Code)
 
+				// 총 납입 원금
+				total_Sum += total_Principal
+				// 총 세전이자
+				total_Interest += int(interest)
+				// 총 세금
+				total_Tax += int(tax)
+				// 총 만기금액
+				total_FinalAmount += int(finalAmount)
+
 				result = append(result, bank.Recommand_Deposit{
 					Deposit:        deposit,
 					Deposit_Detail: *v,
@@ -283,12 +301,29 @@ func Bank(route fiber.Router) {
 			log.Print("월 납입 가능 금액이 0인 경우")
 			log.Print("한달에 내야하는 월 적금 금액 : ", test)
 
-			return c.JSON(result)
+			// return c.JSON(result)
+
+			return c.JSON(fiber.Map{
+				"result":  result,
+				"총 납입 원금": total_Sum,
+				"총 세전 이자": total_Interest,
+				"총 세금":    total_Tax,
+				"총 만기금액":  total_FinalAmount,
+			})
 
 		} else {
 			// 월 납입금액이 0이 아닌 경우
 			remainingAmount := model.MonthlyAmount
 			totalFinalAmount := 0
+
+			// 총 원금 합계
+			total_Sum := 0
+			// 총 세전이자 합계
+			total_Interest := 0
+			// 총 세금 합계
+			total_Tax := 0
+			// 총 만기금액 합계
+			total_FinalAmount := 0
 
 			for _, v := range search.Deposit_Details {
 				if remainingAmount <= 0 {
@@ -317,6 +352,16 @@ func Bank(route fiber.Router) {
 				finalAmount := float64(total_Principal) + interest - tax
 				totalFinalAmount += int(finalAmount)
 				deposit, _ := bank.FindDepositByCode(v.Code)
+
+				// 총 납입 원금
+				total_Sum += total_Principal
+				// 총 세전이자
+				total_Interest += int(interest)
+				// 총 세금
+				total_Tax += int(tax)
+				// 총 만기금액
+				total_FinalAmount += int(finalAmount)
+
 				result = append(result, bank.Recommand_Deposit{
 					Deposit:        deposit,
 					Deposit_Detail: *v,
@@ -337,7 +382,14 @@ func Bank(route fiber.Router) {
 				log.Print("월 납입 가능 금액이 0이 아닌 경우")
 				log.Print("한달에 내야하는 월 적금 금액 : ", model.MonthlyAmount)
 
-				return c.JSON(result)
+				return c.JSON(fiber.Map{
+					"result":  result,
+					"총 납입 원금": total_Sum,
+					"총 세전 이자": total_Interest,
+					"총 세금":    total_Tax,
+					"총 만기금액":  total_FinalAmount,
+				})
+
 			} else {
 				// 추가로 필요한 월 납입금과 적합한 상품 계산
 				neededAmount := model.TargetAmount - totalFinalAmount
