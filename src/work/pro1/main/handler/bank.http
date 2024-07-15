@@ -98,14 +98,10 @@ Content-Type: application/json
     "vulnerable_social_group": "N",
     "young": "Y",
     "soldier": "N",
-    "children": "N",
-    "business": "Y",
-    "old":"N"
-    
-
-
-    
-    
+    "children": "Y",
+    "business": "N",
+    "old":"N",
+    "monthlyAmount": 2000000 
 }
 
 

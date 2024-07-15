@@ -27,7 +27,8 @@ type Recommand struct {
 }
 
 type Recommand_Deposit struct {
-
+	// 적금 정보
+	Deposit Deposit `json:"deposit" bson:"deposit"`
 	// 추천 적금 정보
 	Deposit_Detail Deposit_Detail `json:"deposit_detail" bson:"deposit_detail"`
 	// 납입 기간

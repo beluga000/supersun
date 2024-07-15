@@ -174,6 +174,16 @@ func Bank(route fiber.Router) {
 
 	})
 
+	bankroute.Get("/instalment/top3", func(c *fiber.Ctx) error {
+
+		search := bank.SearchInstalment_Savings{}
+
+		search.Finds_Top3()
+
+		return c.JSON(search)
+
+	})
+
 	bankroute.Get("/cma/test", func(c *fiber.Ctx) error {
 
 		search := bank.SearchDeposit{}
@@ -227,59 +237,178 @@ func Bank(route fiber.Router) {
 		// 세금율 설정
 		tax_rate := 0.154
 
-		for _, v := range search.Deposit_Details {
-			// 해당 적금 상품 월 최대 납입금액
-			monthlyAmount := v.Amount_max
-			// 해당 적금 상품 연간 최대 이율
-			deposit_max_rate := v.Max_rate
-			// 해당 적금 상품 연간 이율
-			yearlyInterestRate := deposit_max_rate / 100
-			// 해당 적금 상품 기간
-			deposit_period := v.Product_period
+		if model.MonthlyAmount == 0 {
 
-			total_Principal := monthlyAmount * deposit_period
+			test := 0
 
-			var interest float64
+			for _, v := range search.Deposit_Details {
+				// 해당 적금 상품 월 최대 납입금액
+				monthlyAmount := v.Amount_max
+				// 해당 적금 상품 연간 최대 이율
+				deposit_max_rate := v.Max_rate
+				// 해당 적금 상품 연간 이율
+				yearlyInterestRate := deposit_max_rate / 100
+				// 해당 적금 상품 기간
+				deposit_period := v.Product_period
+				total_Principal := monthlyAmount * deposit_period
+				var interest float64
+				// 단리 이자 계산
+				for month := 1; month <= deposit_period; month++ {
+					interest += float64(monthlyAmount) * yearlyInterestRate * float64(deposit_period-month+1) / 12
+				}
+				tax := interest * tax_rate
+				finalAmount := float64(total_Principal) + interest - tax
+				sumAmount += int(finalAmount)
+				if sumAmount > model.TargetAmount {
+					break
+				}
 
-			// 단리 이자 계산
-			for month := 1; month <= deposit_period; month++ {
-				interest += float64(monthlyAmount) * yearlyInterestRate * float64(deposit_period-month+1) / 12
+				deposit, _ := bank.FindDepositByCode(v.Code)
+
+				result = append(result, bank.Recommand_Deposit{
+					Deposit:        deposit,
+					Deposit_Detail: *v,
+					M_납입기간:         deposit_period,
+					M_월납입금:         monthlyAmount,
+					M_원금:           total_Principal,
+					M_이자:           int(interest),
+					M_세금:           int(tax),
+					M_만기금액:         int(finalAmount),
+				})
+
+				test += v.Amount_max
+
 			}
 
-			tax := interest * tax_rate
+			log.Print("월 납입 가능 금액이 0인 경우")
+			log.Print("한달에 내야하는 월 적금 금액 : ", test)
 
-			finalAmount := float64(total_Principal) + interest - tax
+			return c.JSON(result)
 
-			sumAmount += int(finalAmount)
+		} else {
+			// 월 납입금액이 0이 아닌 경우
+			remainingAmount := model.MonthlyAmount
+			totalFinalAmount := 0
 
-			if sumAmount > model.TargetAmount {
-				break
+			for _, v := range search.Deposit_Details {
+				if remainingAmount <= 0 {
+					break
+				}
+
+				// 해당 적금 상품 월 최대 납입금액
+				monthlyAmount := v.Amount_max
+				if remainingAmount < monthlyAmount {
+					monthlyAmount = remainingAmount
+				}
+
+				// 해당 적금 상품 연간 최대 이율
+				deposit_max_rate := v.Max_rate
+				// 해당 적금 상품 연간 이율
+				yearlyInterestRate := deposit_max_rate / 100
+				// 해당 적금 상품 기간
+				deposit_period := v.Product_period
+				total_Principal := monthlyAmount * deposit_period
+				var interest float64
+				// 단리 이자 계산
+				for month := 1; month <= deposit_period; month++ {
+					interest += float64(monthlyAmount) * yearlyInterestRate * float64(deposit_period-month+1) / 12
+				}
+				tax := interest * tax_rate
+				finalAmount := float64(total_Principal) + interest - tax
+				totalFinalAmount += int(finalAmount)
+				deposit, _ := bank.FindDepositByCode(v.Code)
+				result = append(result, bank.Recommand_Deposit{
+					Deposit:        deposit,
+					Deposit_Detail: *v,
+					M_납입기간:         deposit_period,
+					M_월납입금:         monthlyAmount,
+					M_원금:           total_Principal,
+					M_이자:           int(interest),
+					M_세금:           int(tax),
+					M_만기금액:         int(finalAmount),
+				})
+
+				remainingAmount -= monthlyAmount
 			}
 
-			result = append(result, bank.Recommand_Deposit{
-				Deposit_Detail: *v,
-				M_납입기간:         deposit_period,
-				M_월납입금:         monthlyAmount,
-				M_원금:           total_Principal,
-				M_이자:           int(interest),
-				M_세금:           int(tax),
-				M_만기금액:         int(finalAmount),
-			})
+			// 목표 금액 달성 여부 확인
+			if totalFinalAmount >= model.TargetAmount {
 
+				log.Print("월 납입 가능 금액이 0이 아닌 경우")
+				log.Print("한달에 내야하는 월 적금 금액 : ", model.MonthlyAmount)
+
+				return c.JSON(result)
+			} else {
+				// 추가로 필요한 월 납입금과 적합한 상품 계산
+				neededAmount := model.TargetAmount - totalFinalAmount
+				additionalDeposits := []bank.Recommand_Deposit{}
+				remainingAmount = model.MonthlyAmount
+				additionalMonthlyTotal := 0
+				additionalFinalAmount := 0
+
+				for _, v := range search.Deposit_Details {
+					if neededAmount <= 0 {
+						break
+					}
+
+					// 기존에 선택된 상품은 제외
+					isAlreadyIncluded := false
+					for _, r := range result {
+						if r.Deposit_Detail.ID == v.ID { // 고유한 식별자 필드를 비교
+							isAlreadyIncluded = true
+							break
+						}
+					}
+					if isAlreadyIncluded {
+						continue
+					}
+
+					monthlyAmount := v.Amount_max
+					if remainingAmount < monthlyAmount {
+						monthlyAmount = remainingAmount
+					}
+
+					deposit_max_rate := v.Max_rate
+					yearlyInterestRate := deposit_max_rate / 100
+					deposit_period := v.Product_period
+					total_Principal := monthlyAmount * deposit_period
+					var interest float64
+					for month := 1; month <= deposit_period; month++ {
+						interest += float64(monthlyAmount) * yearlyInterestRate * float64(deposit_period-month+1) / 12
+					}
+					tax := interest * tax_rate
+					finalAmount := float64(total_Principal) + interest - tax
+					deposit, _ := bank.FindDepositByCode(v.Code)
+					additionalDeposits = append(additionalDeposits, bank.Recommand_Deposit{
+						Deposit:        deposit,
+						Deposit_Detail: *v,
+						M_납입기간:         deposit_period,
+						M_월납입금:         monthlyAmount,
+						M_원금:           total_Principal,
+						M_이자:           int(interest),
+						M_세금:           int(tax),
+						M_만기금액:         int(finalAmount),
+					})
+					neededAmount -= int(finalAmount)
+					remainingAmount -= monthlyAmount
+					additionalMonthlyTotal += monthlyAmount
+					additionalFinalAmount += int(finalAmount)
+				}
+
+				log.Print("월 납입 가능 금액이 0이 아닌 경우 + 제출한 월 납입 가능 금액으로 목표 금액을 달성하지 못한 경우")
+				log.Print("납입 가능 금액 : ", model.MonthlyAmount)
+				log.Print("추가로 필요한 월 납입 금액 : ", additionalMonthlyTotal)
+
+				return c.JSON(fiber.Map{
+					"result":        result,
+					"추가 상품 만기 총합":   additionalFinalAmount,
+					"추가 상품 월 납입 금액": additionalMonthlyTotal,
+					"추가 상품":         additionalDeposits,
+				})
+			}
 		}
 
-		// 적금 개수 확인
-		log.Print("적금 개수 : ", len(result))
-		// 총 만기금액 확인
-		log.Print("총 월 납입금액 : ", sumAmount)
-		// 적금 이름 확인
-		for _, v := range result {
-
-			log.Print(v.Deposit_Detail.Product_name)
-		}
-
-		return c.JSON(result)
-
+		return c.JSON("해당 적금 상품이 없습니다.")
 	})
 
 	bankroute.Get("/deposit/list/test", func(c *fiber.Ctx) error {

@@ -254,3 +254,33 @@ func (search *SearchInstalment_Savings) Finds() (errEx co.MsgEx) {
 
 	return errEx
 }
+
+func (search *SearchInstalment_Savings) Finds_Top3() (errEx co.MsgEx) {
+	pipeline := search.condition()
+
+	sort := bson.M{"primeInterestRate": -1}
+
+	pipeline = append(pipeline, bson.M{"$sort": sort})
+	pipeline = append(pipeline, bson.M{"$limit": 3})
+
+	cursor, err := inits.MongoDb.Collection(search.CollectionName()).Aggregate(
+		context.TODO(),
+		pipeline,
+	)
+	if err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	if err = cursor.All(context.TODO(), &search.Instalment_Savingss); err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	total, err := inits.MongoDb.Collection(search.CollectionName()).CountDocuments(context.TODO(), pipeline[0]["$match"].(bson.M))
+	if err != nil {
+		return co.ErrorPass(err.Error())
+	}
+
+	search.Total = total
+
+	return errEx
+}
