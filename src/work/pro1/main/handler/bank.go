@@ -239,8 +239,6 @@ func Bank(route fiber.Router) {
 
 		if model.MonthlyAmount == 0 {
 
-			test := 0
-
 			// 총 납입 원금
 			total_Sum := 0
 			// 총 세전이자
@@ -249,6 +247,8 @@ func Bank(route fiber.Router) {
 			total_Tax := 0
 			// 총 만기금액
 			total_FinalAmount := 0
+			// 한달에 내야하는 월 적금 금액
+			month_amount := 0
 
 			for _, v := range search.Deposit_Details {
 				// 해당 적금 상품 월 최대 납입금액
@@ -268,9 +268,6 @@ func Bank(route fiber.Router) {
 				tax := interest * tax_rate
 				finalAmount := float64(total_Principal) + interest - tax
 				sumAmount += int(finalAmount)
-				if sumAmount > model.TargetAmount {
-					break
-				}
 
 				deposit, _ := bank.FindDepositByCode(v.Code)
 
@@ -293,22 +290,25 @@ func Bank(route fiber.Router) {
 					M_세금:           int(tax),
 					M_만기금액:         int(finalAmount),
 				})
-
-				test += v.Amount_max
+				if sumAmount > model.TargetAmount {
+					break
+				}
+				month_amount += v.Amount_max
 
 			}
 
 			log.Print("월 납입 가능 금액이 0인 경우")
-			log.Print("한달에 내야하는 월 적금 금액 : ", test)
+			log.Print("한달에 내야하는 월 적금 금액 : ", month_amount)
 
 			// return c.JSON(result)
 
 			return c.JSON(fiber.Map{
-				"result":  result,
-				"총 납입 원금": total_Sum,
-				"총 세전 이자": total_Interest,
-				"총 세금":    total_Tax,
-				"총 만기금액":  total_FinalAmount,
+				"result":             result,
+				"total_sum":          total_Sum,
+				"total_interest":     total_Interest,
+				"total_tax":          total_Tax,
+				"total_final_amount": total_FinalAmount,
+				"month_amount":       month_amount,
 			})
 
 		} else {
@@ -324,6 +324,7 @@ func Bank(route fiber.Router) {
 			total_Tax := 0
 			// 총 만기금액 합계
 			total_FinalAmount := 0
+			month_amount := 0
 
 			for _, v := range search.Deposit_Details {
 				if remainingAmount <= 0 {
@@ -373,6 +374,8 @@ func Bank(route fiber.Router) {
 					M_만기금액:         int(finalAmount),
 				})
 
+				month_amount += monthlyAmount
+
 				remainingAmount -= monthlyAmount
 			}
 
@@ -383,20 +386,32 @@ func Bank(route fiber.Router) {
 				log.Print("한달에 내야하는 월 적금 금액 : ", model.MonthlyAmount)
 
 				return c.JSON(fiber.Map{
-					"result":  result,
-					"총 납입 원금": total_Sum,
-					"총 세전 이자": total_Interest,
-					"총 세금":    total_Tax,
-					"총 만기금액":  total_FinalAmount,
+					"result":             result,
+					"total_sum":          total_Sum,
+					"total_interest":     total_Interest,
+					"total_tax":          total_Tax,
+					"total_final_amount": total_FinalAmount,
+					"month_amount":       month_amount,
 				})
 
 			} else {
 				// 추가로 필요한 월 납입금과 적합한 상품 계산
 				neededAmount := model.TargetAmount - totalFinalAmount
 				additionalDeposits := []bank.Recommand_Deposit{}
-				remainingAmount = model.MonthlyAmount
+
 				additionalMonthlyTotal := 0
 				additionalFinalAmount := 0
+
+				// 추가 상품 원금 합계
+				extra_total_Sum := 0
+				// 추가 상품 세전이자 합계
+				extra_total_Interest := 0
+				// 추가 상품 세금 합계
+				extra_total_Tax := 0
+				// 추가 상품 만기금액 합계
+				extra_total_FinalAmount := 0
+
+				extra_month_amount := 0
 
 				for _, v := range search.Deposit_Details {
 					if neededAmount <= 0 {
@@ -416,9 +431,6 @@ func Bank(route fiber.Router) {
 					}
 
 					monthlyAmount := v.Amount_max
-					if remainingAmount < monthlyAmount {
-						monthlyAmount = remainingAmount
-					}
 
 					deposit_max_rate := v.Max_rate
 					yearlyInterestRate := deposit_max_rate / 100
@@ -445,6 +457,18 @@ func Bank(route fiber.Router) {
 					remainingAmount -= monthlyAmount
 					additionalMonthlyTotal += monthlyAmount
 					additionalFinalAmount += int(finalAmount)
+
+					// 추가 상품 원금 합계
+					extra_total_Sum += total_Principal
+					// 추가 상품 세전이자 합계
+					extra_total_Interest += int(interest)
+					// 추가 상품 세금 합계
+					extra_total_Tax += int(tax)
+					// 추가 상품 만기금액 합계
+					extra_total_FinalAmount += int(finalAmount)
+
+					extra_month_amount += monthlyAmount
+
 				}
 
 				log.Print("월 납입 가능 금액이 0이 아닌 경우 + 제출한 월 납입 가능 금액으로 목표 금액을 달성하지 못한 경우")
@@ -452,10 +476,18 @@ func Bank(route fiber.Router) {
 				log.Print("추가로 필요한 월 납입 금액 : ", additionalMonthlyTotal)
 
 				return c.JSON(fiber.Map{
-					"result":        result,
-					"추가 상품 만기 총합":   additionalFinalAmount,
-					"추가 상품 월 납입 금액": additionalMonthlyTotal,
-					"추가 상품":         additionalDeposits,
+					"result":                   result,
+					"total_sum":                total_Sum,
+					"total_interest":           total_Interest,
+					"total_tax":                total_Tax,
+					"total_final_amount":       total_FinalAmount,
+					"month_amount":             month_amount,
+					"extra_deposit":            additionalDeposits,
+					"extra_total_sum":          extra_total_Sum,
+					"extra_total_interest":     extra_total_Interest,
+					"extra_total_tax":          extra_total_Tax,
+					"extra_total_final_amount": extra_total_FinalAmount,
+					"extra_month_amount":       extra_month_amount,
 				})
 			}
 		}

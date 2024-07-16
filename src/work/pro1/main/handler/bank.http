@@ -94,14 +94,14 @@ Content-Type: application/json
 
 {
     "period": "24",
-    "targetAmount": 30000000,
+    "targetAmount": 50000000,
     "vulnerable_social_group": "N",
     "young": "Y",
     "soldier": "N",
     "children": "Y",
     "business": "N",
     "old":"N",
-    "monthlyAmount": 2000000 
+    "monthlyAmount": 3000000 
 }
 
 
