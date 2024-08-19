@@ -5,36 +5,29 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/swagger"
 	"github.com/gofiber/template/html/v2"
 	"sunny.ksw.kr/inits"
 
-	HANDLER "sunny.ksw.kr/work/pro1/main/handler"
+	HANDLER "sunny.ksw.kr/work/encryption/main/handler" // 핸들러 패키지
+	_ "sunny.ksw.kr/work/pro1/main/docs"                // Swagger docs
 )
 
 func init() {
-
-	// log.Print("Server is running on port : " + os.Getenv("PORT"))
-
-	//  MONGO_DEFAULT_URI =  "mongodb://localhost:27017/?maxPoolSize=20&w=majority"
-	//	MONGO_DEFAULT_DB = "local"
-	// mongo init
 	mongo_uri := "mongodb://localhost:27017/?maxPoolSize=20&w=majority"
 	mongo_db := "local"
-
 	inits.MongoInit(mongo_uri, mongo_db)
-	//inits.MongoInit(mongo_uri, mongo_db)
-
 }
 
-func main() { //@note
-
-	// session.Init()
-	// jwt_custom.Init()
-	// log.Print(os.Getenv("VPATH"))
+// @title Fiber Example API
+// @version 1.0
+// @description API 설명
+// @host localhost:8090
+// @BasePath /api/v1
+func main() {
 	engine := html.New(os.Getenv("VPATH"), ".html")
 
 	app := fiber.New(fiber.Config{
-		// Prefork: true,
 		AppName:                  "big_money",
 		CaseSensitive:            true,
 		StrictRouting:            true,
@@ -45,8 +38,8 @@ func main() { //@note
 		Views:                    engine,
 		EnableSplittingOnParsers: true,
 	})
-	/* cors ********************************************************************* */
 
+	// CORS 설정
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:9000, http://localhost:8080",
 		AllowHeaders:     "Origin,Content-Type,Accept,Content-Length,Accept-Language,Accept-Encoding,Connection,Access-Control-Allow-Origin,Authorization,name",
@@ -55,22 +48,18 @@ func main() { //@note
 		ExposeHeaders:    "Content-Disposition",
 	}))
 
-	apiV1 := app.Group("/api/v1") // /api
+	// Swagger UI 초기화
+	app.Get("/swagger/*", swagger.HandlerDefault) // Swagger 핸들러 등록
 
+	apiV1 := app.Group("/api/v1") // API 그룹
+
+	// 기본 엔드포인트
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
 
-	app.Get("/favicon.ico", func(c *fiber.Ctx) error {
-		return c.SendString("OK")
-	})
+	// 핸들러 등록
+	HANDLER.User(apiV1)
 
-	HANDLER.Member(apiV1)
-
-	HANDLER.Card(apiV1)
-
-	HANDLER.Bank(apiV1)
-
-	app.Listen(":8090") // 변경된 부분
-
+	app.Listen(":8899") // 서버 실행
 }

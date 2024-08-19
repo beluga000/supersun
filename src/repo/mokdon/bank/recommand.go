@@ -43,4 +43,6 @@ type Recommand_Deposit struct {
 	M_세금 int `json:"m_세금" bson:"m_세금"`
 	// 만기금액
 	M_만기금액 int `json:"m_만기금액" bson:"m_만기금액"`
+	// 재투자 횟수
+	M_재투자횟수 int `json:"m_재투자횟수" bson:"m_재투자횟수"`
 }

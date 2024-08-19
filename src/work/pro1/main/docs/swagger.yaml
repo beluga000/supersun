@@ -1,0 +1,9 @@
+basePath: /api/v1
+host: localhost:8090
+info:
+  contact: {}
+  description: API 설명
+  title: API 문서
+  version: "1.0"
+paths: {}
+swagger: "2.0"

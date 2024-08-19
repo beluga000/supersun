@@ -93,15 +93,15 @@ POST http://127.0.0.1:8090/api/v1/bank/recommand/deposit HTTP/1.1
 Content-Type: application/json
 
 {
-    "period": "24",
-    "targetAmount": 50000000,
+    "period": "12",
+    "targetAmount": 12000000,
     "vulnerable_social_group": "N",
-    "young": "Y",
+    "young": "N",
     "soldier": "N",
-    "children": "Y",
+    "children": "N",
     "business": "N",
     "old":"N",
-    "monthlyAmount": 3000000 
+    "monthlyAmount": 1000000 
 }
 
 

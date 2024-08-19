@@ -1,0 +1,41 @@
+
+	Id string `json:"id" bson:"id"`
+
+	Pwd string `json:"pwd" bson:"pwd"`
+
+	Name string `json:"name" bson:"name"`
+
+	Email string `json:"email" bson:"email"`
+
+	Age int `json:"age" bson:"age"`
+
+
+####
+
+###
+
+POST http://127.0.0.1:8899/api/v1/user/create HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": "test@gmail.com",
+    "pwd": "test@111333",
+    "name": "test",
+    "email": "test@gmail.com",
+    "age": 20
+}
+
+###
+
+POST http://127.0.0.1:8899/api/v1/user/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": "test@gmail.com",
+    "pwd": "test@111333"
+}
+
+
+###
+
+GET http://127.0.0.1:8899/api/v1/user/read/66c2ca9ae16a82f1420ac21c HTTP/1.1
